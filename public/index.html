@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance AI Agent</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" type="image/png">
+  <meta name="theme-color" content="#1e3a8a">
+</head>
+<body>
+  <!-- Remove Money Rain Background -->
+
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-chart-line"></i> Finance AI Agent</h1>
+      <p>Ask questions about stocks, crypto, financial news, and more</p>
+      <a href="voice/index.html" class="mode-switch-btn"><i class="fas fa-microphone-alt"></i> Switch to Voice Mode</a>
+    </header>
+    
+    <main>
+      <div class="chat-container">
+        <div class="particles-container">
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="message bot-message">
+            <div class="message-avatar">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+              <p>Welcome to your <strong>Financial AI Assistant</strong>, powered by Google Gemini! 💰</p>
+              <p>I can help you with a variety of financial tasks:</p>
+              <ul>
+                <li>📈 <strong>Stock prices</strong> - "What's AAPL trading at today?"</li>
+                <li>🪙 <strong>Cryptocurrency</strong> - "What's the current price of Bitcoin?"</li>
+                <li>📊 <strong>Investment calculations</strong> - "Calculate return on $5000 at 8% for 5 years"</li>
+                <li>🌐 <strong>Exchange rates</strong> - "What's the USD to EUR exchange rate?"</li>
+                <li>📰 <strong>Financial news</strong> - "Latest news about Tesla stock"</li>
+              </ul>
+              <p>I'll process your requests instantly, even if there are connectivity issues with external services. What would you like to know today?</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="chat-input-container">
+          <form id="query-form">
+            <input type="text" id="user-prompt" placeholder="Ask a finance question..." autocomplete="off">
+            <button type="submit" id="submit-btn"><i class="fas fa-paper-plane"></i></button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="loading-indicator" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processing your request</p>
+      </div>
+    </main>
+    
+    <div class="suggestions">
+      <h3>Try asking about:</h3>
+      <div class="suggestion-buttons">
+        <button class="suggestion-btn" data-query="What is the current price of Tesla stock?"><i class="fas fa-chart-line"></i> Tesla stock price</button>
+        <button class="suggestion-btn" data-query="How much is Bitcoin worth right now?"><i class="fab fa-bitcoin"></i> Bitcoin price</button>
+        <button class="suggestion-btn" data-query="What are the latest news about the stock market?"><i class="far fa-newspaper"></i> Market news</button>
+        <button class="suggestion-btn" data-query="Calculate the return on $5000 invested at 8% for 5 years with compound interest"><i class="fas fa-calculator"></i> Investment return</button>
+        <button class="suggestion-btn" data-query="What is the exchange rate between USD and EUR?"><i class="fas fa-exchange-alt"></i> USD to EUR rate</button>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Finance AI Agent • Powered by Google Gemini</p>
+    </footer>
+  </div>
+  
+  <script src="main.js"></script>
+</body>
+</html> 

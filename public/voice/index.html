@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance AI Voice Assistant</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="voice-styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" type="image/png">
+  <meta name="theme-color" content="#1e3a8a">
+</head>
+<body class="voice-mode">
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-microphone-alt"></i> Finance AI Voice Assistant</h1>
+      <p>Speak your financial questions and get voice responses</p>
+      <a href="../index.html" class="mode-switch-btn"><i class="fas fa-keyboard"></i> Switch to Text Mode</a>
+    </header>
+    
+    <main>
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="message bot-message">
+            <div class="message-avatar">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+              <p>Welcome to your <strong>Voice Financial Assistant</strong>, powered by Google Gemini! 💰</p>
+              <p>I can help you with a variety of financial tasks:</p>
+              <ul>
+                <li>📈 <strong>Stock prices</strong> - "What's AAPL trading at today?"</li>
+                <li>🪙 <strong>Cryptocurrency</strong> - "What's the current price of Bitcoin?"</li>
+                <li>📊 <strong>Investment calculations</strong> - "Calculate return on $5000 at 8% for 5 years"</li>
+                <li>🌐 <strong>Exchange rates</strong> - "What's the USD to EUR exchange rate?"</li>
+                <li>📰 <strong>Financial news</strong> - "Latest news about Tesla stock"</li>
+              </ul>
+              <p>Just click the microphone button and speak your question clearly. I'll respond with both text and voice.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="voice-input-container">
+          <div class="mic-button-container">
+            <button id="mic-button" type="button">
+              <i class="fas fa-microphone"></i>
+              <span class="mic-label">Click to speak</span>
+            </button>
+          </div>
+          <div class="voice-status" id="voice-status">Ready to listen</div>
+          <div class="voice-transcript" id="voice-transcript"></div>
+        </div>
+      </div>
+      
+      <div class="loading-indicator" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processing your request</p>
+      </div>
+    </main>
+    
+    <div class="suggestions">
+      <h3>Try saying:</h3>
+      <div class="suggestion-buttons">
+        <button class="voice-example-btn" data-text="What is the current price of Tesla stock?"><i class="fas fa-chart-line"></i> "What is Tesla stock price?"</button>
+        <button class="voice-example-btn" data-text="How much is Bitcoin worth right now?"><i class="fab fa-bitcoin"></i> "How much is Bitcoin worth?"</button>
+        <button class="voice-example-btn" data-text="What are the latest news about the stock market?"><i class="far fa-newspaper"></i> "Latest market news"</button>
+        <button class="voice-example-btn" data-text="Calculate investment of $5000 at 8% for 5 years"><i class="fas fa-calculator"></i> "Calculate investment return"</button>
+      </div>
+    </div>
+    
+    <div class="voice-controls">
+      <div class="voice-settings">
+        <div class="setting">
+          <label for="voice-speed">Voice Speed:</label>
+          <input type="range" id="voice-speed" min="0.5" max="2" step="0.1" value="1">
+          <span id="speed-value">1.0×</span>
+        </div>
+        <div class="setting">
+          <label for="voice-pitch">Voice Pitch:</label>
+          <input type="range" id="voice-pitch" min="0.5" max="1.5" step="0.1" value="1.2">
+          <span id="pitch-value">1.2</span>
+        </div>
+        <div class="setting">
+          <label for="auto-speak">Auto-Speak Responses:</label>
+          <input type="checkbox" id="auto-speak" checked>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Finance AI Voice Assistant • Powered by Google Gemini & Web Speech API</p>
+    </footer>
+  </div>
+  
+  <script src="voice-main.js"></script>
+</body>
+</html> 
