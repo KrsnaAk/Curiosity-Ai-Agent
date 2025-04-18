@@ -139,38 +139,3 @@ Financial news is sourced from [News API](https://newsapi.org/), which offers a 
 
 If API keys are not provided in the .env file, the respective tools will fall back to mock data to demonstrate functionality. For production use, it's recommended to configure all API keys.
 
-## Deployment
-
-### Deploying to Netlify
-
-This application is configured for easy deployment to Netlify:
-
-1. **Create a Netlify account** if you don't have one at [netlify.com](https://www.netlify.com/)
-
-2. **Connect your GitHub repository** to Netlify
-   - Click "New site from Git"
-   - Select GitHub and authorize Netlify
-   - Choose your repository
-
-3. **Configure build settings**
-   - Build command: `npm run build`
-   - Publish directory: `public`
-
-4. **Set environment variables**
-   - In Netlify dashboard, go to Site settings > Build & deploy > Environment
-   - Add all your API keys as environment variables:
-     - `GEMINI_API_KEY`
-     - `ALPHA_VANTAGE_API_KEY`
-     - `NEWS_API_KEY`
-     - `EXCHANGE_RATE_API_KEY`
-     - `CMC_API_KEY`
-
-5. **Deploy**
-   - Netlify will automatically deploy your site and provide a URL
-   - Any future pushes to your repository will trigger automatic redeployments
-
-The application is configured to detect whether it's running locally or on Netlify and will adjust API endpoints accordingly.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
