@@ -59,7 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     try {
       // Fetch response from server (works with both local and Netlify deployment)
-      const apiEndpoint = window.location.hostname === 'localhost' ? '/api/query' : '/.netlify/functions/query';
+      // Use the appropriate endpoint based on where the app is running
+      const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? '/api/query' 
+        : '/.netlify/functions/query';
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {

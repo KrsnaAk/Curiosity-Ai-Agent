@@ -579,12 +579,31 @@ async function processUserInput(userInput) {
       }
     }
     
-    // Special case for news queries
-    if (userInput.match(/news|latest|headlines|updates|report|what('s| is| are)|how|tell me about|information|updates|summary|details|analysis/i) && 
-        (userInput.match(/finance|financial|stock|market|crypto|business|economic|economy|investment|company|companies/i) ||
-         userInput.match(/india|indian|nifty|sensex|bse|nse/i) ||
-         userInput.match(/2025|future|upcoming|next year|this year|budget|ipo/i) ||
-         userInput.match(/tariff|trade war|us china|china us|trade tension|trade dispute|trade conflict/i))) {
+    // Special case for news queries - more balanced approach
+    // First check if the query is explicitly asking for news or information about a finance topic
+    const isNewsQuery = (
+      // Explicit news keywords
+      userInput.match(/\bnews\b|\bheadlines\b|\breport\b|\bupdates\b/i) ||
+      // Asking about latest/recent information
+      (userInput.match(/\blatest\b|\brecent\b|\bcurrent\b|\btoday\b/i) && 
+       userInput.match(/\babout\b|\bon\b|\bregarding\b|\bconcerning\b/i)) ||
+      // Specific news-seeking phrases
+      userInput.match(/what(?:'s| is| are) (?:happening|going on|new)/i) ||
+      userInput.match(/tell me about (?:recent|latest|current)/i)
+    );
+    
+    // Then check if it's related to a financial topic
+    const isFinanceTopic = (
+      userInput.match(/\bfinance\b|\bfinancial\b|\bstock\b|\bmarket\b|\bcrypto\b|\bbusiness\b|\beconomic\b|\beconomy\b|\binvestment\b/i) ||
+      userInput.match(/\bindia\b|\bindian\b|\bnifty\b|\bsensex\b|\bbse\b|\bnse\b/i) ||
+      userInput.match(/\b2025\b|\bfuture\b|\bupcoming\b|\bnext year\b|\bthis year\b|\bbudget\b|\bipo\b/i) ||
+      userInput.match(/\btariff\b|\btrade war\b|\bus china\b|\bchina us\b|\btrade tension\b|\btrade dispute\b|\btrade conflict\b/i)
+    );
+    
+    // Only trigger news response if it's explicitly asking for news AND about a financial topic
+    // OR if it's very clearly a news query about markets/finance
+    if ((isNewsQuery && isFinanceTopic) || 
+        userInput.match(/\bmarket news\b|\bfinancial news\b|\bstock news\b|\bmarket update\b|\bfinancial update\b/i)) {
       
       // Extract the news topic
       let topic = 'stock market'; // Default topic
