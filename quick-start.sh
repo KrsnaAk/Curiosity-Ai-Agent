@@ -34,7 +34,7 @@ if [ ! -f .env ]; then
         echo "# Alpha Vantage API Key (for stock data)" >> .env
         echo "ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key_here" >> .env
         echo "# Port (optional)" >> .env
-        echo "PORT=3000" >> .env
+        echo "PORT=3001" >> .env
         echo "✅ Created basic .env file. Please edit it to add your API keys."
         echo "📝 See get-api-keys.md for instructions on obtaining API keys."
     fi

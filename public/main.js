@@ -58,8 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
     form.classList.add('disabled');
     
     try {
-      // Fetch response from server
-      const response = await fetch('/api/query', {
+      // Fetch response from server (works with both local and Netlify deployment)
+      const apiEndpoint = window.location.hostname === 'localhost' ? '/api/query' : '/.netlify/functions/query';
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
