@@ -93,6 +93,11 @@ npm run dev
 
 5. Open your browser and navigate to `http://localhost:3001`
 
+                 OR   
+   
+ You can also Test it here --- `https://curiosity-ai-agent.netlify.app/`
+
+   
 ## Usage
 
 The Finance AI Agent responds to queries in a structured format:
