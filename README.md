@@ -2,6 +2,8 @@
 
 A specialized AI agent focused on the finance domain that can provide information about stocks, cryptocurrencies, financial news, and more. This agent follows a structured reasoning process using Start, Plan, Action, Observation, and Output states.
 
+LIVE --- https://curiosity-ai-agent.netlify.app/
+
 ## Features
 - Real-time stock price information and historical data analysis
 - Cryptocurrency market tracking and trend analysis
