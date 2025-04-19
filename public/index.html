@@ -4,34 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finance AI Agent</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="modern-styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" type="image/png">
-  <meta name="theme-color" content="#1e3a8a">
+  <meta name="theme-color" content="#0a192f">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Remove Money Rain Background -->
+  <div class="gradient-bg">
+    <div class="gradient-animation"></div>
+  </div>
+  
+  <div class="floating-elements">
+    <div class="floating-element" id="element-1"><i class="fas fa-chart-line"></i></div>
+    <div class="floating-element" id="element-2"><i class="fas fa-dollar-sign"></i></div>
+    <div class="floating-element" id="element-3"><i class="fas fa-coins"></i></div>
+    <div class="floating-element" id="element-4"><i class="fas fa-chart-pie"></i></div>
+    <div class="floating-element" id="element-5"><i class="fab fa-bitcoin"></i></div>
+  </div>
 
   <div class="container">
     <header>
-      <h1><i class="fas fa-chart-line"></i> Finance AI Agent</h1>
-      <p>Ask questions about stocks, crypto, financial news, and more</p>
-      <a href="voice/index.html" class="mode-switch-btn"><i class="fas fa-microphone-alt"></i> Switch to Voice Mode</a>
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h1>Finance AI Agent</h1>
+      </div>
+      <p class="tagline">Your intelligent financial assistant</p>
+      <a href="voice/index.html" class="mode-switch-btn"><i class="fas fa-microphone-alt"></i> Voice Mode</a>
     </header>
     
     <main>
       <div class="chat-container">
-        <div class="particles-container">
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
-          <div class="particle"></div>
+        <div class="chat-header">
+          <div class="chat-title">
+            <i class="fas fa-robot"></i>
+            <span>AI Assistant</span>
+          </div>
+          <div class="chat-actions">
+            <button class="action-btn" id="clear-chat" title="Clear chat"><i class="fas fa-trash-alt"></i></button>
+          </div>
         </div>
         <div class="chat-messages" id="chat-messages">
           <div class="message bot-message">
@@ -39,47 +55,89 @@
               <i class="fas fa-robot"></i>
             </div>
             <div class="message-content">
-              <p>Welcome to your <strong>Financial AI Assistant</strong>, powered by Google Gemini! 💰</p>
-              <p>I can help you with a variety of financial tasks:</p>
-              <ul>
-                <li>📈 <strong>Stock prices</strong> - "What's AAPL trading at today?"</li>
-                <li>🪙 <strong>Cryptocurrency</strong> - "What's the current price of Bitcoin?"</li>
-                <li>📊 <strong>Investment calculations</strong> - "Calculate return on $5000 at 8% for 5 years"</li>
-                <li>🌐 <strong>Exchange rates</strong> - "What's the USD to EUR exchange rate?"</li>
-                <li>📰 <strong>Financial news</strong> - "Latest news about Tesla stock"</li>
-              </ul>
-              <p>I'll process your requests instantly, even if there are connectivity issues with external services. What would you like to know today?</p>
+              <div class="message-bubble">
+                <div class="message-header">
+                  <span class="bot-name">Finance AI</span>
+                  <span class="message-time">Just now</span>
+                </div>
+                <div class="message-text">
+                  <p>Welcome to your <strong>Financial AI Assistant</strong>, powered by Google Gemini! 💰</p>
+                  <p>I can help you with a variety of financial tasks:</p>
+                  <ul class="feature-list">
+                    <li><span class="feature-icon">📈</span> <strong>Stock prices</strong> - "What's AAPL trading at today?"</li>
+                    <li><span class="feature-icon">🪙</span> <strong>Cryptocurrency</strong> - "What's the current price of Bitcoin?"</li>
+                    <li><span class="feature-icon">📊</span> <strong>Investment calculations</strong> - "Calculate return on $5000 at 8% for 5 years"</li>
+                    <li><span class="feature-icon">🌐</span> <strong>Exchange rates</strong> - "What's the USD to EUR exchange rate?"</li>
+                    <li><span class="feature-icon">📰</span> <strong>Financial news</strong> - "Latest news about Tesla stock"</li>
+                  </ul>
+                  <p>I'll process your requests instantly, even if there are connectivity issues with external services. What would you like to know today?</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
         <div class="chat-input-container">
           <form id="query-form">
-            <input type="text" id="user-prompt" placeholder="Ask a finance question..." autocomplete="off">
-            <button type="submit" id="submit-btn"><i class="fas fa-paper-plane"></i></button>
+            <div class="input-wrapper">
+              <input type="text" id="user-prompt" placeholder="Ask a finance question..." autocomplete="off">
+              <div class="input-actions">
+                <button type="submit" id="submit-btn" class="pulse-animation">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       </div>
       
       <div class="loading-indicator" id="loading" style="display: none;">
-        <div class="spinner"></div>
-        <p>Processing your request</p>
+        <div class="modern-spinner">
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+        </div>
+        <p>Analyzing financial data<span class="dot-animation"></span></p>
       </div>
     </main>
     
     <div class="suggestions">
-      <h3>Try asking about:</h3>
+      <h3>Quick Questions</h3>
       <div class="suggestion-buttons">
-        <button class="suggestion-btn" data-query="What is the current price of Tesla stock?"><i class="fas fa-chart-line"></i> Tesla stock price</button>
-        <button class="suggestion-btn" data-query="How much is Bitcoin worth right now?"><i class="fab fa-bitcoin"></i> Bitcoin price</button>
-        <button class="suggestion-btn" data-query="What are the latest news about the stock market?"><i class="far fa-newspaper"></i> Market news</button>
-        <button class="suggestion-btn" data-query="Calculate the return on $5000 invested at 8% for 5 years with compound interest"><i class="fas fa-calculator"></i> Investment return</button>
-        <button class="suggestion-btn" data-query="What is the exchange rate between USD and EUR?"><i class="fas fa-exchange-alt"></i> USD to EUR rate</button>
+        <button class="suggestion-btn" data-query="What is the current price of Tesla stock?">
+          <div class="suggestion-icon"><i class="fas fa-chart-line"></i></div>
+          <span>Tesla stock price</span>
+        </button>
+        <button class="suggestion-btn" data-query="How much is Bitcoin worth right now?">
+          <div class="suggestion-icon"><i class="fab fa-bitcoin"></i></div>
+          <span>Bitcoin price</span>
+        </button>
+        <button class="suggestion-btn" data-query="What are the latest news about the stock market?">
+          <div class="suggestion-icon"><i class="far fa-newspaper"></i></div>
+          <span>Market news</span>
+        </button>
+        <button class="suggestion-btn" data-query="Calculate the return on $5000 invested at 8% for 5 years with compound interest">
+          <div class="suggestion-icon"><i class="fas fa-calculator"></i></div>
+          <span>Investment return</span>
+        </button>
+        <button class="suggestion-btn" data-query="What is the exchange rate between USD and EUR?">
+          <div class="suggestion-icon"><i class="fas fa-exchange-alt"></i></div>
+          <span>USD to EUR rate</span>
+        </button>
       </div>
     </div>
     
     <footer>
-      <p>Finance AI Agent • Powered by Google Gemini</p>
+      <div class="footer-content">
+        <div class="footer-logo">
+          <i class="fas fa-robot"></i>
+        </div>
+        <p>Finance AI Agent • Powered by Google Gemini</p>
+        <div class="footer-links">
+          <a href="#" class="footer-link"><i class="fas fa-shield-alt"></i> Privacy</a>
+          <a href="#" class="footer-link"><i class="fas fa-question-circle"></i> Help</a>
+        </div>
+      </div>
     </footer>
   </div>
   

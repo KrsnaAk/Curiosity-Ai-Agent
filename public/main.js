@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatMessages = document.getElementById('chat-messages');
   const loadingIndicator = document.getElementById('loading');
   const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+  const clearChatBtn = document.getElementById('clear-chat');
   
   // Preload voices as soon as the page loads
   if ('speechSynthesis' in window) {
@@ -102,30 +103,63 @@ document.addEventListener('DOMContentLoaded', () => {
     userPromptInput.focus();
   });
   
-  // Handle suggestion buttons
+  // Handle suggestion button clicks
   suggestionButtons.forEach(button => {
     button.addEventListener('click', () => {
-      // Add visual feedback when clicked
-      button.classList.add('active');
-      setTimeout(() => button.classList.remove('active'), 300);
-      
-      userPromptInput.value = button.dataset.query;
+      const query = button.getAttribute('data-query');
+      userPromptInput.value = query;
       form.dispatchEvent(new Event('submit'));
+      
+      // Add animation to the clicked button
+      button.classList.add('clicked');
+      setTimeout(() => {
+        button.classList.remove('clicked');
+      }, 300);
     });
   });
+  
+  // Handle clear chat button
+  if (clearChatBtn) {
+    clearChatBtn.addEventListener('click', () => {
+      // Keep only the first welcome message
+      const welcomeMessage = chatMessages.querySelector('.message');
+      chatMessages.innerHTML = '';
+      if (welcomeMessage) {
+        chatMessages.appendChild(welcomeMessage);
+      }
+      
+      // Add animation to the button
+      clearChatBtn.classList.add('clicked');
+      setTimeout(() => {
+        clearChatBtn.classList.remove('clicked');
+      }, 300);
+    });
+  }
   
   // Function to add user message to chat
   function addUserMessage(message) {
     const messageElement = document.createElement('div');
-    messageElement.className = 'message user-message';
+    messageElement.classList.add('message', 'user-message');
+    
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
     messageElement.innerHTML = `
-      <div class="message-content">
-        <p>${escapeHtml(message)}</p>
-      </div>
       <div class="message-avatar">
         <i class="fas fa-user"></i>
       </div>
+      <div class="message-content">
+        <div class="message-bubble">
+          <div class="message-header">
+            <span class="bot-name">You</span>
+            <span class="message-time">${timestamp}</span>
+          </div>
+          <div class="message-text">
+            <p>${escapeHtml(message)}</p>
+          </div>
+        </div>
+      </div>
     `;
+    
     chatMessages.appendChild(messageElement);
     scrollToBottom();
   }
@@ -133,25 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Function to add bot message to chat
   function addBotMessage(message) {
     const messageElement = document.createElement('div');
-    messageElement.className = 'message bot-message';
+    messageElement.classList.add('message', 'bot-message');
     
-    let formattedMessage = formatAgentResponse(message);
+    // Process markdown in the message
+    const formattedMessage = processMessageContent(message);
     
-    messageElement.innerHTML = `
-      <div class="message-avatar">
-        <i class="fas fa-robot"></i>
-      </div>
-      <div class="message-content">
-        ${formattedMessage}
-        <div class="message-actions">
-          <button class="tts-button" title="Listen to this response">
-            <i class="fas fa-volume-up"></i>
-          </button>
-        </div>
-      </div>
-    `;
-    chatMessages.appendChild(messageElement);
-    scrollToBottom();
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     // Apply highlight.js to code blocks if available
     if (window.hljs) {

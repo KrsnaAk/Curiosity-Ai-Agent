@@ -115,7 +115,22 @@ const tools = {
   
   getExchangeRate: async (from, to) => {
     try {
-      // Mock exchange rates for common pairs
+      // Try to get real-time exchange rates using ExchangeRate-API
+      try {
+        const response = await axios.get(
+          `https://open.er-api.com/v6/latest/${from.toUpperCase()}`,
+          { timeout: 5000 } // Set a timeout to avoid hanging
+        );
+        
+        if (response.data && response.data.rates && response.data.rates[to.toUpperCase()]) {
+          return response.data.rates[to.toUpperCase()];
+        }
+      } catch (apiError) {
+        console.error('Exchange rate API error:', apiError.message);
+        // Fall back to mock rates if API fails
+      }
+      
+      // Fallback to mock exchange rates for common pairs
       const mockRates = {
         'USD_EUR': 0.92,
         'EUR_USD': 1.09,
@@ -124,13 +139,30 @@ const tools = {
         'USD_JPY': 154.32,
         'JPY_USD': 0.0065,
         'USD_INR': 83.5,
-        'INR_USD': 0.012
+        'INR_USD': 0.012,
+        'USD_CAD': 1.37,
+        'CAD_USD': 0.73,
+        'USD_AUD': 1.52,
+        'AUD_USD': 0.66,
+        'USD_CNY': 7.24,
+        'CNY_USD': 0.14
       };
       
       const key = `${from.toUpperCase()}_${to.toUpperCase()}`;
       if (mockRates[key]) {
+        console.log(`Using mock rate for ${key}: ${mockRates[key]}`);
         return mockRates[key];
       } else {
+        // Try to calculate cross-rate using USD as intermediary
+        const fromUsdKey = `${from.toUpperCase()}_USD`;
+        const usdToKey = `USD_${to.toUpperCase()}`;
+        
+        if (mockRates[fromUsdKey] && mockRates[usdToKey]) {
+          const crossRate = 1 / mockRates[fromUsdKey] * mockRates[usdToKey];
+          console.log(`Calculated cross rate for ${key} via USD: ${crossRate}`);
+          return crossRate;
+        }
+        
         return 1.0; // Default fallback
       }
     } catch (error) {
@@ -376,12 +408,201 @@ const tools = {
       // Simple interest formula: A = P(1 + rt/100)
       return principal * (1 + (rate * time) / 100);
     }
+  },
+  
+  // Function to handle complex geopolitical financial queries like trade wars and tariffs
+  getGeopoliticalFinanceInfo: async (topic) => {
+    try {
+      // First try to get real-time news data about the topic
+      const newsData = await tools.getFinancialNews(topic);
+      
+      // Generate a specialized prompt for Gemini to analyze the topic
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-pro",
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1500,
+        },
+      });
+      
+      // Create a detailed prompt with any available news data
+      let newsText = "";
+      if (newsData && newsData.length > 0) {
+        newsText = newsData.map(item => `Title: ${item.title}\nDate: ${item.date}\nSummary: ${item.summary}`).join('\n\n');
+      }
+      
+      // Specialized prompts for different topics
+      let specializedPrompt = "";
+      
+      if (topic.includes('tariff') && (topic.includes('US') || topic.includes('China'))) {
+        specializedPrompt = `
+        Focus on providing specific tariff rates and percentages imposed by the US on Chinese goods and vice versa.
+        Include information about which sectors and products are most affected.
+        Mention the timeline of tariff implementations and any recent changes.
+        Provide economic impact figures if available.
+        `;
+      } else if (topic.includes('Indian stocks') || topic.includes('India') && topic.includes('impact')) {
+        specializedPrompt = `
+        Focus on specific Indian stocks and sectors that are impacted by global trade tensions.
+        Analyze how the IT, pharmaceutical, automotive, and manufacturing sectors in India are affected.
+        Mention specific companies if relevant and their exposure to international markets.
+        Include information about how India's trade policies have adapted to global trade tensions.
+        `;
+      }
+      
+      const prompt = `You are a financial expert specializing in geopolitical economic analysis. 
+      Analyze the following topic: "${topic}"
+      
+      ${newsText ? `Here is recent news data about this topic:\n${newsText}\n\n` : ''}
+      
+      ${specializedPrompt}
+      
+      Provide a comprehensive analysis that includes:
+      1. Current situation and background
+      2. Specific numbers, percentages, and data points (tariff rates, economic impacts, etc.)
+      3. Market implications, especially for stocks and sectors
+      4. Regional impacts (US, China, India, EU, etc. as relevant)
+      5. Future outlook
+      
+      Format your response in a clear, structured way with sections and bullet points where appropriate.
+      Include specific data points whenever possible.
+      If the news data doesn't provide specific numbers for things like tariff percentages, provide the most accurate information from your knowledge.
+      `;
+      
+      const result = await model.generateContent(prompt);
+      const analysis = result.response.text();
+      
+      return {
+        source: newsData && newsData.length > 0 ? 'Combined real-time news and analysis' : 'AI analysis based on training data',
+        analysis: analysis,
+        newsData: newsData
+      };
+    } catch (error) {
+      console.error('Error in geopolitical finance analysis:', error);
+      return {
+        source: 'Error',
+        analysis: 'I encountered an error while analyzing this geopolitical financial topic. Please try again or ask a more specific question.',
+        error: error.message
+      };
+    }
   }
 };
 
 // Main function to process user input
 async function processUserInput(userInput) {
   try {
+    // Special case for currency conversion queries
+    if (
+        // Match variations of exchange rate or currency conversion queries
+        (userInput.match(/exchange rate|conversion rate|convert/i) ||
+         userInput.match(/what(?:'s| is) (?:the (?:current|latest|)|)(?:exchange|conversion) rate/i) ||
+         userInput.match(/how much is \d+ [A-Za-z]{3} in [A-Za-z]{3}/i) ||
+         userInput.match(/\d+ [A-Za-z]{3} to [A-Za-z]{3}/i)) &&
+        // And it contains currency codes or currency names
+        (userInput.match(/USD|EUR|GBP|JPY|INR|CAD|AUD|CNY|dollar|euro|pound|yen|rupee/i))
+    ) {
+        // Extract the currencies involved
+        let fromCurrency = 'USD'; // Default
+        let toCurrency = 'EUR';   // Default
+        let amount = 1;           // Default amount
+        
+        // Currency code mapping
+        const currencyMap = {
+            'dollar': 'USD',
+            'dollars': 'USD',
+            'usd': 'USD',
+            'euro': 'EUR',
+            'euros': 'EUR',
+            'eur': 'EUR',
+            'pound': 'GBP',
+            'pounds': 'GBP',
+            'gbp': 'GBP',
+            'yen': 'JPY',
+            'jpy': 'JPY',
+            'rupee': 'INR',
+            'rupees': 'INR',
+            'inr': 'INR',
+            'cad': 'CAD',
+            'canadian dollar': 'CAD',
+            'aud': 'AUD',
+            'australian dollar': 'AUD',
+            'cny': 'CNY',
+            'yuan': 'CNY',
+            'rmb': 'CNY'
+        };
+        
+        // Extract amount if present
+        const amountMatch = userInput.match(/(\d+(?:\.\d+)?)/i);
+        if (amountMatch) {
+            amount = parseFloat(amountMatch[1]);
+        }
+        
+        // Extract currencies
+        for (const [name, code] of Object.entries(currencyMap)) {
+            if (userInput.toLowerCase().includes(name.toLowerCase())) {
+                // Determine if this is the source or target currency based on position
+                const nameIndex = userInput.toLowerCase().indexOf(name.toLowerCase());
+                const toIndex = userInput.toLowerCase().indexOf(' to ');
+                const inIndex = userInput.toLowerCase().indexOf(' in ');
+                
+                if ((toIndex > -1 && nameIndex < toIndex) || (inIndex > -1 && nameIndex < inIndex)) {
+                    fromCurrency = code;
+                } else {
+                    toCurrency = code;
+                }
+            }
+        }
+        
+        // Handle specific currency codes (3-letter codes)
+        const currencyCodes = userInput.match(/[A-Z]{3}/g);
+        if (currencyCodes && currencyCodes.length >= 2) {
+            // Assume first is from, second is to
+            fromCurrency = currencyCodes[0];
+            toCurrency = currencyCodes[1];
+        }
+        
+        try {
+            // Get the exchange rate
+            const rate = await tools.getExchangeRate(fromCurrency, toCurrency);
+            const convertedAmount = (amount * rate).toFixed(2);
+            
+            // Get currency symbols for better formatting
+            const currencySymbols = {
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£',
+                'JPY': '¥',
+                'INR': '₹',
+                'CAD': 'C$',
+                'AUD': 'A$',
+                'CNY': '¥'
+            };
+            
+            const fromSymbol = currencySymbols[fromCurrency] || fromCurrency;
+            const toSymbol = currencySymbols[toCurrency] || toCurrency;
+            
+            // Format the response
+            let response = `The current exchange rate from ${fromCurrency} to ${toCurrency} is ${rate.toFixed(4)}. `;
+            response += `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+            
+            if (fromSymbol !== fromCurrency || toSymbol !== toCurrency) {
+                response += ` (${fromSymbol}${amount} = ${toSymbol}${convertedAmount})`;
+            }
+            
+            // Add some market context if available
+            if (fromCurrency === 'USD' && toCurrency === 'EUR') {
+                response += "\n\nThe USD/EUR rate is influenced by interest rate differentials between the Federal Reserve and European Central Bank, as well as economic growth indicators in both regions.";
+            } else if (fromCurrency === 'USD' && toCurrency === 'INR') {
+                response += "\n\nThe USD/INR rate is affected by India's trade balance, foreign investment flows, and interest rate decisions by the Reserve Bank of India.";
+            }
+            
+            return `START: ${userInput}\n\nPLAN: I'll check the current exchange rate from ${fromCurrency} to ${toCurrency} and calculate the conversion.\n\nACTION: getExchangeRate("${fromCurrency}", "${toCurrency}")\n\nOBSERVATION: ${rate}\n\nOUTPUT: ${response}`;
+        } catch (error) {
+            console.error('Error in currency conversion query:', error);
+            // Fall through to Gemini response if there's an error
+        }
+    }
+    
     // Special case for crypto price queries
     if (
         // Match variations of "what is X price" or "how much is X worth"
@@ -514,7 +735,7 @@ async function processUserInput(userInput) {
                 // Use the company name if available, otherwise just use the symbol
                 const displayName = companyName || `${symbol} stock`;
                 
-                return `START: ${userInput}\n\nPLAN: I'll check the current price of ${displayName}.\n\nACTION: getStockPrice("${symbol}")\n\nOBSERVATION: ${price}\n\nOUTPUT: The current price of ${displayName} is ${price}. This is the latest price available from the stock market. Stock prices can fluctuate throughout the trading day.`;
+                return `START: ${userInput}\n\nPLAN: I'll get the current stock price for ${displayName}.\n\nACTION: getStockPrice("${symbol}")\n\nOBSERVATION: The current price of ${displayName} is ${price}.\n\nOUTPUT: The current stock price of ${displayName} is ${price}. This is the latest price available from the stock market. Stock prices can fluctuate throughout the trading day.`;
             } catch (error) {
                 console.error('Error in stock price query:', error);
                 // Fall through to Gemini response if there's an error
@@ -649,6 +870,42 @@ async function processUserInput(userInput) {
       }
     }
     
+    // Check for complex geopolitical financial queries about trade wars, tariffs, and market impacts
+    if (userInput.match(/trade\s*wars?|tariffs?|trade\s*tensions?|trade\s*disputes?|trade\s*conflicts?|economic\s*sanctions?|geopolitical\s*tensions?/i)) {
+      
+      // Determine the specific topic based on the query
+      let topic = 'trade war';
+      
+      // More specific topic extraction
+      if (userInput.match(/china|chinese|beijing|xi jinping/i) && userInput.match(/usa|us|united states|america|biden|trump/i)) {
+        topic = 'US-China trade war';
+        
+        // Even more specific for tariff percentages
+        if (userInput.match(/tariff|percentage|rate|percent/i)) {
+          topic = 'US-China tariff percentages';
+        }
+      } else if (userInput.match(/india|indian|modi/i)) {
+        if (userInput.match(/stocks?|market|impact|affect/i)) {
+          topic = 'Indian stocks impacted by trade wars';
+        } else {
+          topic = 'India trade relations';
+        }
+      } else if (userInput.match(/eu|europe|european union/i)) {
+        topic = 'EU trade relations';
+      }
+      
+      try {
+        // Get specialized financial geopolitical information
+        const geopoliticalInfo = await tools.getGeopoliticalFinanceInfo(topic);
+        
+        // Format the response
+        return `START: ${userInput}\n\nPLAN: I'll analyze the geopolitical financial situation regarding ${topic}.\n\nACTION: getGeopoliticalFinanceInfo("${topic}")\n\nOBSERVATION: Retrieved detailed analysis from ${geopoliticalInfo.source}.\n\nOUTPUT: ${geopoliticalInfo.analysis}`;
+      } catch (error) {
+        console.error('Error in geopolitical finance query:', error);
+        // Fall through to Gemini response if there's an error
+      }
+    }
+    
     // For other queries, generate a response with Gemini
     try {
       const model = genAI.getGenerativeModel({ 
@@ -659,9 +916,15 @@ async function processUserInput(userInput) {
         },
       });
       
-      const prompt = `You are a financial assistant. Respond to this query: "${userInput}"
+      // Enhanced prompt with better instructions for complex financial queries
+      const prompt = `You are a sophisticated financial assistant with expertise in global markets, geopolitics, and economic policy. Respond to this query: "${userInput}"
       
-      If this is a finance-related question, provide a detailed answer.
+      If this is a finance-related question:
+      1. Provide specific data points, numbers, and percentages when relevant
+      2. Include market implications and sector impacts when appropriate
+      3. Reference recent developments (as of your training data)
+      4. Structure your response with clear sections if the topic is complex
+      
       If it's about non-financial topics, relate it to economics or finance if possible.
       Be helpful, clear, and concise.`;
       
