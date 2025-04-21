@@ -570,23 +570,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Log the server response for debugging
     console.log('Full server response:', data);
     
-    if (!data || !data.response) {
-      console.error('Invalid response format:', data);
-      addBotMessage('Sorry, I received an invalid response format from the server. Please try again.');
-      // Re-enable the form
-      form.classList.remove('disabled');
-      submitBtn.disabled = false;
-      userPromptInput.disabled = false;
-      return;
-    }
-    
-    // Use the new displayOutput function to handle the response
     try {
-      displayOutput(data.response);
-      // Play received sound
-      messageReceivedSound.play().catch(e => console.log('Sound play prevented by browser'));
+      // Handle different response formats
+      let responseText;
+      
+      // Check if data is a string (direct response from server)
+      if (typeof data === 'string') {
+        responseText = data;
+      }
+      // Check if data is an object with a response property (JSON response)
+      else if (data && typeof data === 'object') {
+        if (data.response) {
+          responseText = data.response;
+        } else {
+          // If data is an object but doesn't have a response property
+          responseText = JSON.stringify(data);
+        }
+      }
+      // Handle undefined or null data
+      else if (!data) {
+        throw new Error('Empty response received from server');
+      }
+      
+      // Display the response
+      if (responseText) {
+        addBotMessage(responseText);
+        // Play received sound
+        messageReceivedSound.play().catch(e => console.log('Sound play prevented by browser'));
+      } else {
+        throw new Error('Could not extract response text');
+      }
     } catch (error) {
-      console.error('Error displaying output:', error);
+      console.error('Error processing response:', error);
       addBotMessage(`Sorry, I encountered an error processing the response: ${error.message}. Please try again.`);
     }
 

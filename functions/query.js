@@ -84,10 +84,11 @@ exports.handler = async function(event, context) {
       console.log('Using fallback response');
     }
     
-    // Return the response
+    // Make sure the response is properly formatted for the frontend
+    // The frontend expects a string, not an object with a response property
     return {
       statusCode: 200,
-      body: JSON.stringify({ response }),
+      body: JSON.stringify(response),
       headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
