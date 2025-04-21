@@ -30,6 +30,42 @@ document.addEventListener('DOMContentLoaded', () => {
   errorSound.volume = 0.3;
   
   // Handle form submission
+  // Function to fetch response from the agent
+  async function fetchAgentResponse(prompt) {
+    try {
+      console.log('Fetching agent response for prompt:', prompt);
+      
+      // Determine the API endpoint based on the environment
+      const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? '/api/query' 
+        : '/.netlify/functions/query';
+      
+      console.log('Using API endpoint:', apiEndpoint);
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt })
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+      
+      console.log('Parsing response as JSON...');
+      const data = await response.json();
+      console.log('Response data received:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching response:', error);
+      throw error;
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -59,42 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     form.classList.add('disabled');
     
     try {
-      // Function to fetch response from the agent
-      async function fetchAgentResponse(prompt) {
-        try {
-          console.log('Fetching agent response for prompt:', prompt);
-          
-          // Determine the API endpoint based on the environment
-          const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? '/api/query' 
-            : '/.netlify/functions/query';
-          
-          console.log('Using API endpoint:', apiEndpoint);
-          
-          const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ prompt })
-          });
-          
-          console.log('Response status:', response.status);
-          
-          if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-          }
-          
-          console.log('Parsing response as JSON...');
-          const data = await response.json();
-          console.log('Response data received:', data);
-          return data;
-        } catch (error) {
-          console.error('Error fetching response:', error);
-          throw error;
-        }
-      }
-      
       const data = await fetchAgentResponse(prompt);
       processResponse(data);
       
