@@ -95,6 +95,7 @@ exports.handler = async function(event, context) {
         console.log('Gemini API key missing, using fallback response');
         response = getFallbackResponse(prompt);
       } else {
+        console.log('Using Gemini API to process query');
         response = await processUserInput(prompt);
         
         // Only use fallback for clearly non-financial general knowledge queries
@@ -168,19 +169,22 @@ exports.handler = async function(event, context) {
           promptLower.includes('insurance')
         );
         
-        // Only use fallback if it's a general knowledge query AND doesn't have financial keywords
+        // Only use fallback for truly non-financial general knowledge queries
         // Also check if the response already contains a proper output section
         const hasProperResponse = response && response.includes('OUTPUT:');
         
-        if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
-          console.log('Using fallback for non-financial general knowledge query');
-          response = getFallbackResponse(prompt);
-        } else if (hasFinancialKeywords) {
-          console.log('Processing financial query with full capabilities');
+        // For financial queries, always ensure we use the Gemini API response
+        if (hasFinancialKeywords) {
+          console.log('Processing financial query with full Gemini API capabilities');
           // Make sure financial queries get a proper response format if they don't have one
           if (!hasProperResponse && response) {
-            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using financial expertise.\n\nOUTPUT: ' + response;
+            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using Gemini API for financial expertise.\n\nOUTPUT: ' + response;
           }
+        } 
+        // Only use fallback for non-financial general knowledge queries
+        else if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
+          console.log('Using fallback for non-financial general knowledge query');
+          response = getFallbackResponse(prompt);
         }
       }
     } catch (processingError) {
