@@ -489,6 +489,7 @@ const tools = {
 };
 
 // Main function to process user input
+// Main function to process user input
 async function processUserInput(userInput) {
   try {
     // Special case for currency conversion queries
@@ -934,14 +935,15 @@ async function processUserInput(userInput) {
       return `START: ${userInput}\n\nPLAN: I'll analyze this query and provide relevant financial information.\n\nACTION: Generating response based on financial knowledge\n\nOBSERVATION: This query requires financial expertise.\n\nOUTPUT: ${text}`;
     } catch (error) {
       console.error('Error with Gemini API:', error);
-      
-      // Fallback response
+      // Fallback response if Gemini fails
       return `START: ${userInput}\n\nPLAN: I'll provide a response based on my knowledge.\n\nOBSERVATION: I'm having trouble accessing my AI capabilities.\n\nOUTPUT: I can help you with stock prices, cryptocurrency rates, exchange rates, investment calculations, and financial news. Could you try asking a specific finance-related question?`;
     }
   } catch (error) {
     console.error('Error processing user input:', error);
     return `START: ${userInput}\n\nPLAN: I'll provide a general response.\n\nOBSERVATION: There was an error processing your request.\n\nOUTPUT: I apologize for the inconvenience. I'm experiencing technical difficulties. Please try asking again about stocks, crypto, exchange rates, or investment calculations.`;
   }
+  // Final fallback: always return a non-empty string
+  return `Sorry, I couldn't process your request at this time. Please try again later or ask a different finance-related question.`;
 }
 
 module.exports = { processUserInput }; 

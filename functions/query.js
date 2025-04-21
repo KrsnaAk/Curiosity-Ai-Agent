@@ -1,11 +1,14 @@
 const { processUserInput } = require('../financeAgent');
-require('dotenv').config();
+// DO NOT use dotenv in Netlify Functions. Netlify injects env vars automatically.
 
-// Check if environment variables are loaded
-console.log('Netlify Function Environment Check:');
-console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
-console.log('- ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present' : 'Missing');
-console.log('- CMC_API_KEY:', process.env.CMC_API_KEY ? 'Present' : 'Missing');
+// Log environment variables for debugging (visible in Netlify function logs)
+exports.handler = async function(event, context) {
+  console.log('--- Netlify Function Environment Check ---');
+  console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
+  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present' : 'Missing');
+  console.log('CMC_API_KEY:', process.env.CMC_API_KEY ? 'Present' : 'Missing');
+  console.log('Prompt received:', event.body);
+
 
 // Simplified fallback response for when APIs fail
 function getFallbackResponse(prompt) {
@@ -26,7 +29,7 @@ function getFallbackResponse(prompt) {
   return 'START: ' + prompt + '\n\nPLAN: I\'ll provide a general response.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
 }
 
-exports.handler = async function(event, context) {
+
   // Set function timeout to prevent Netlify 502 errors
   context.callbackWaitsForEmptyEventLoop = false;
   // Only allow POST requests
@@ -60,35 +63,29 @@ exports.handler = async function(event, context) {
     console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY.length} chars)` : 'Missing');
     console.log('- ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? `Present (${process.env.ALPHA_VANTAGE_API_KEY.length} chars)` : 'Missing');
     
-    // Process the user input with timeout protection
+    // Process the user input
     let response;
     try {
-      // Set a timeout for the processUserInput function to prevent Netlify function timeouts
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Function timed out')), 8000); // 8 second timeout
-      });
-      
-      // Race between the actual function and the timeout
-      response = await Promise.race([
-        processUserInput(prompt),
-        timeoutPromise
-      ]);
-      
+      response = await processUserInput(prompt);
       console.log('Response generated successfully');
       console.log('Response type:', typeof response);
+      console.log('Response value:', response);
       console.log('Response length:', response ? response.length : 0);
     } catch (processingError) {
-      console.error('Error or timeout in processUserInput:', processingError);
-      // Use fallback response instead of failing
-      response = getFallbackResponse(prompt);
-      console.log('Using fallback response');
+      console.error('Error in processUserInput:', processingError);
+      response = `Error: ${processingError.message}`;
     }
-    
-    // Make sure the response is properly formatted for the frontend
-    // The frontend expects a string, not an object with a response property
+
+    // Ensure response is a non-empty string
+    if (!response || (typeof response === 'string' && response.trim() === '')) {
+      console.error('Empty or undefined response detected. Returning fallback error message.');
+      response = 'Sorry, I could not process your request. Please try again later or ask a different finance-related question.';
+    }
+
+    // Always return a JSON object with a 'response' property
     return {
       statusCode: 200,
-      body: JSON.stringify(response),
+      body: JSON.stringify({ response }),
       headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
