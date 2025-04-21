@@ -24,3 +24,10 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db 
+
+# Test files
+test-setup.js
+test-agent.js
+test-agent-verbose.js
+test-agent-file.js
+
