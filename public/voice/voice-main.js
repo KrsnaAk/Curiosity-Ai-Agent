@@ -434,38 +434,34 @@ document.addEventListener('DOMContentLoaded', () => {
     scrollToBottom();
   }
   
-  // Function to fetch response from the server
+  // Function to fetch response from the server (environment-aware)
   async function fetchAgentResponse(prompt) {
     try {
-      const response = await fetch('/api/query', {
+      // Use dynamic endpoint selection
+      const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? '/api/query'
+        : '/.netlify/functions/query';
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ prompt })
       });
-      
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
       }
-      
       const data = await response.json();
-      
       // Process the response
       processResponse(data);
-      
     } catch (error) {
       console.error('Error:', error);
-      
       // Play error sound
       errorSound.play().catch(e => console.log('Sound play prevented by browser'));
-      
       // Hide loading indicator
       loadingIndicator.style.display = 'none';
-      
       // Add error message
       addBotMessage(`Sorry, I encountered an error: ${error.message || 'Failed to get response'}. Please try again.`);
-      
       // Reset status
       voiceStatus.textContent = 'Ready to listen';
       voiceStatus.classList.remove('processing');
