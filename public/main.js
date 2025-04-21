@@ -181,15 +181,38 @@ document.addEventListener('DOMContentLoaded', () => {
     scrollToBottom();
   }
   
+  // Function to process message content with formatting
+  function processMessageContent(message) {
+    // Format the message with financial highlights and markdown
+    return formatResponse(message);
+  }
+
   // Function to add bot message to chat
   function addBotMessage(message) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', 'bot-message');
     
-    // Process markdown in the message
-    const formattedMessage = processMessageContent(message);
+    // Create message structure
+    messageElement.innerHTML = `
+      <div class="message-avatar">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="message-content">
+        <div class="message-bubble">
+          <div class="message-header">
+            <span class="bot-name">Finance AI</span>
+            <span class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div class="message-text">${processMessageContent(message)}</div>
+          <div class="message-actions">
+            <button class="message-action-btn tts-button" title="Listen"><i class="fas fa-volume-up"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
     
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Add to chat
+    chatMessages.appendChild(messageElement);
     
     // Apply highlight.js to code blocks if available
     if (window.hljs) {
@@ -200,9 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add event listener for text-to-speech button
     const ttsButton = messageElement.querySelector('.tts-button');
-    ttsButton.addEventListener('click', (event) => {
-      speakText(formattedMessage, event);
-    });
+    if (ttsButton) {
+      ttsButton.addEventListener('click', (event) => {
+        speakText(message, event);
+      });
+    }
+    
+    // Scroll to the bottom
+    scrollToBottom();
   }
   
   // Function to add typing indicator
