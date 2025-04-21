@@ -44,16 +44,27 @@ function getFallbackResponse(prompt) {
   try {
     // Parse the request body
     console.log('Received Netlify function request');
-    const body = JSON.parse(event.body);
-    const { prompt } = body;
+    let body;
+    let prompt;
+    try {
+      body = JSON.parse(event.body);
+      prompt = body.prompt;
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ response: 'Sorry, there was a problem understanding your request. Please try again.' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
     
     console.log('Request body:', body);
     
     if (!prompt) {
       console.log('Error: Prompt is required');
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Prompt is required' }),
+        statusCode: 200,
+        body: JSON.stringify({ response: 'Prompt is required. Please enter your question.' }),
         headers: { 'Content-Type': 'application/json' }
       };
     }
@@ -73,7 +84,7 @@ function getFallbackResponse(prompt) {
       console.log('Response length:', response ? response.length : 0);
     } catch (processingError) {
       console.error('Error in processUserInput:', processingError);
-      response = `Error: ${processingError.message}`;
+      response = `Sorry, there was an error processing your request. Please try again later.`;
     }
 
     // Ensure response is a non-empty string
@@ -93,10 +104,10 @@ function getFallbackResponse(prompt) {
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    
+    // Always return a 200 with a response property to prevent Netlify 502
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: `An error occurred while processing your request: ${error.message}` }),
+      statusCode: 200,
+      body: JSON.stringify({ response: 'Sorry, an unexpected error occurred. Please try again later.' }),
       headers: { 'Content-Type': 'application/json' }
     };
   }

@@ -59,22 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
   }
   
-  // Function to fetch response from the agent
+  // Function to fetch response from the agent (Unified and environment-aware)
   async function fetchAgentResponse(prompt) {
     try {
       console.log('Fetching agent response for prompt:', prompt);
-      
-      // Determine the API endpoint based on the environment
-      const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? '/api/query' 
+      // Use dynamic endpoint selection
+      const apiEndpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? '/api/query'
         : '/.netlify/functions/query';
-      
       console.log('Using API endpoint:', apiEndpoint);
-      
       // Set a timeout for the fetch request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -83,26 +79,22 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ prompt }),
         signal: controller.signal
       });
-      
-      // Clear the timeout
       clearTimeout(timeoutId);
-      
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = {};
+        }
+        throw new Error(errorData.error || `Server responded with status ${response.status}`);
       }
-      
-      console.log('Parsing response as JSON...');
       const data = await response.json();
-      console.log('Response data received:', data);
-      
       // If data is empty or undefined, use fallback
       if (!data) {
         console.log('Empty response, using fallback');
         return generateFallbackResponse(prompt);
       }
-      
       return data;
     } catch (error) {
       console.error('Error fetching response:', error);
@@ -319,37 +311,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Function to fetch response from the agent
-  async function fetchAgentResponse(prompt) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
-    try {
-      const response = await fetch('/api/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Server responded with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data.response;
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timed out. The server took too long to respond.');
-      }
-      throw error;
-    }
-  }
   
   // Function to format the AI agent response
   function formatAgentResponse(response) {
@@ -639,8 +600,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Display the response
-      addBotMessage(responseText);
-      
+      if (typeof responseText === 'string' && responseText.includes('OUTPUT:')) {
+        displayOutput(responseText);
+      } else {
+        addBotMessage(responseText);
+      }
       // Play received sound
       messageReceivedSound.play().catch(e => console.log('Sound play prevented by browser'));
     } catch (error) {
