@@ -1,14 +1,5 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const { processUserInput } = require('./financeAgent');
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 4000;
-
-// Middleware
-app.use(bodyParser.json());
-app.use(express.static('public'));
+const { processUserInput } = require('../financeAgent');
+// DO NOT use dotenv in Netlify Functions. Netlify injects env vars automatically.
 
 // Improved fallback response for when APIs fail
 function getFallbackResponse(prompt) {
@@ -44,17 +35,51 @@ function getFallbackResponse(prompt) {
   return 'START: ' + prompt + '\n\nPLAN: I\'ll provide a general response.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
 }
 
-// API endpoint to process user queries
-app.post('/api/query', async (req, res) => {
+// Log environment variables for debugging (visible in Netlify function logs)
+exports.handler = async function(event, context) {
+  console.log('--- Netlify Function Environment Check ---');
+  console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
+  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present' : 'Missing');
+  console.log('CMC_API_KEY:', process.env.CMC_API_KEY ? 'Present' : 'Missing');
+  console.log('Prompt received:', event.body);
+
+  // Set function timeout to prevent Netlify 502 errors
+  context.callbackWaitsForEmptyEventLoop = false;
+  // Only allow POST requests
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+
   try {
-    console.log('\n---------- RECEIVED API REQUEST ----------');
-    console.log('Request body:', req.body);
+    // Parse the request body
+    console.log('Received Netlify function request');
+    let body;
+    let prompt;
+    try {
+      body = JSON.parse(event.body);
+      prompt = body.prompt;
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ response: 'Sorry, there was a problem understanding your request. Please try again.' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
     
-    const { prompt } = req.body;
+    console.log('Request body:', body);
     
     if (!prompt) {
       console.log('Error: Prompt is required');
-      return res.status(400).json({ error: 'Prompt is required' });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ response: 'Prompt is required. Please enter your question.' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
     }
     
     console.log('Processing prompt:', prompt);
@@ -62,6 +87,7 @@ app.post('/api/query', async (req, res) => {
     console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY.length} chars)` : 'Missing');
     console.log('- ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? `Present (${process.env.ALPHA_VANTAGE_API_KEY.length} chars)` : 'Missing');
     
+    // Process the user input
     let response;
     try {
       // Check if Gemini API key is present
@@ -71,45 +97,14 @@ app.post('/api/query', async (req, res) => {
       } else {
         response = await processUserInput(prompt);
         
-        // Only use fallback for clearly non-financial general knowledge queries
-        // Check if it's a non-financial query by looking for specific patterns
-        const promptLower = prompt.toLowerCase();
-        const isGeneralKnowledgeQuery = (
-          promptLower.includes('who is') || 
-          promptLower.includes('what is') || 
-          promptLower.includes('how to') || 
-          promptLower.includes('explain')
-        );
-        
-        // Check if it contains financial keywords
-        const hasFinancialKeywords = (
-          promptLower.includes('stock') ||
-          promptLower.includes('invest') ||
-          promptLower.includes('money') ||
-          promptLower.includes('finance') ||
-          promptLower.includes('market') ||
-          promptLower.includes('trading') ||
-          promptLower.includes('crypto') ||
-          promptLower.includes('bitcoin') ||
-          promptLower.includes('fund') ||
-          promptLower.includes('dollar') ||
-          promptLower.includes('euro') ||
-          promptLower.includes('bank') ||
-          promptLower.includes('tax') ||
-          promptLower.includes('economy') ||
-          promptLower.includes('inflation') ||
-          promptLower.includes('interest') ||
-          promptLower.includes('loan') ||
-          promptLower.includes('debt') ||
-          promptLower.includes('budget') ||
-          promptLower.includes('saving') ||
-          promptLower.includes('retirement') ||
-          promptLower.includes('portfolio')
-        );
-        
-        // Only use fallback if it's a general knowledge query AND doesn't have financial keywords
-        if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !response.includes('OUTPUT:')) {
-          console.log('Using fallback for non-financial general knowledge query');
+        // If the response doesn't contain OUTPUT: but we have a general knowledge query,
+        // use our fallback response for general knowledge queries
+        if (!response.includes('OUTPUT:') && 
+            (prompt.toLowerCase().includes('who is') || 
+             prompt.toLowerCase().includes('what is') || 
+             prompt.toLowerCase().includes('how to') || 
+             prompt.toLowerCase().includes('explain'))) {
+          console.log('Using fallback for general knowledge query');
           response = getFallbackResponse(prompt);
         }
       }
@@ -118,35 +113,29 @@ app.post('/api/query', async (req, res) => {
       console.log('Using fallback response due to processing error');
       response = getFallbackResponse(prompt);
     }
-    
+
     // Ensure response is a non-empty string
     if (!response || (typeof response === 'string' && response.trim() === '')) {
       console.error('Empty or undefined response detected. Returning fallback response.');
       response = getFallbackResponse(prompt);
     }
-    
-    // Log the full response to the console for debugging
-    console.log('\n---------- FULL RESPONSE ----------');
-    console.log(typeof response, response ? response.length : 0);
-    console.log(response);
-    console.log('-----------------------------------\n');
-    
-    res.json({ response });
-    console.log('Response sent successfully');
+
+    // Always return a JSON object with a 'response' property
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ response }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   } catch (error) {
-    console.error('\n---------- ERROR PROCESSING QUERY ----------');
+    console.error('Error processing query in Netlify function:');
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('-------------------------------------------\n');
-    // Use fallback response instead of error message
-    const fallbackResponse = getFallbackResponse(req.body.prompt || 'general query');
-    res.json({ response: fallbackResponse });
-    console.log('Fallback response sent due to error');
+    // Always return a 200 with a response property to prevent Netlify 502
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ response: getFallbackResponse(prompt || 'general query') }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Finance AI Agent server is running on port ${PORT}`);
-});
+};

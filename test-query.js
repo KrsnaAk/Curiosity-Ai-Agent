@@ -1,14 +1,6 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const { processUserInput } = require('./financeAgent');
+// Simple test script to check query handling logic
 require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 4000;
-
-// Middleware
-app.use(bodyParser.json());
-app.use(express.static('public'));
+const { processUserInput } = require('./financeAgent');
 
 // Improved fallback response for when APIs fail
 function getFallbackResponse(prompt) {
@@ -44,25 +36,15 @@ function getFallbackResponse(prompt) {
   return 'START: ' + prompt + '\n\nPLAN: I\'ll provide a general response.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
 }
 
-// API endpoint to process user queries
-app.post('/api/query', async (req, res) => {
+// Test function to process a query
+async function testQuery(prompt) {
+  console.log('\n---------- TESTING QUERY ----------');
+  console.log('Query:', prompt);
+  
   try {
-    console.log('\n---------- RECEIVED API REQUEST ----------');
-    console.log('Request body:', req.body);
-    
-    const { prompt } = req.body;
-    
-    if (!prompt) {
-      console.log('Error: Prompt is required');
-      return res.status(400).json({ error: 'Prompt is required' });
-    }
-    
-    console.log('Processing prompt:', prompt);
-    console.log('Environment variables:');
-    console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY.length} chars)` : 'Missing');
-    console.log('- ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? `Present (${process.env.ALPHA_VANTAGE_API_KEY.length} chars)` : 'Missing');
-    
+    // Process the query
     let response;
+    
     try {
       // Check if Gemini API key is present
       if (!process.env.GEMINI_API_KEY) {
@@ -104,13 +86,57 @@ app.post('/api/query', async (req, res) => {
           promptLower.includes('budget') ||
           promptLower.includes('saving') ||
           promptLower.includes('retirement') ||
-          promptLower.includes('portfolio')
+          promptLower.includes('portfolio') ||
+          promptLower.includes('rich') ||
+          promptLower.includes('wealth') ||
+          promptLower.includes('financial') ||
+          promptLower.includes('cash') ||
+          promptLower.includes('income') ||
+          promptLower.includes('expense') ||
+          promptLower.includes('profit') ||
+          promptLower.includes('loss') ||
+          promptLower.includes('dividend') ||
+          promptLower.includes('yield') ||
+          promptLower.includes('bond') ||
+          promptLower.includes('equity') ||
+          promptLower.includes('asset') ||
+          promptLower.includes('liability') ||
+          promptLower.includes('compound') ||
+          promptLower.includes('calculate') ||
+          promptLower.includes('return') ||
+          promptLower.includes('rate') ||
+          promptLower.includes('capital') ||
+          promptLower.includes('hedge') ||
+          promptLower.includes('forex') ||
+          promptLower.includes('exchange') ||
+          promptLower.includes('currency') ||
+          promptLower.includes('price') ||
+          promptLower.includes('cost') ||
+          promptLower.includes('value') ||
+          promptLower.includes('etf') ||
+          promptLower.includes('mutual fund') ||
+          promptLower.includes('401k') ||
+          promptLower.includes('ira') ||
+          promptLower.includes('roth') ||
+          promptLower.includes('credit') ||
+          promptLower.includes('debit') ||
+          promptLower.includes('mortgage') ||
+          promptLower.includes('insurance')
         );
         
         // Only use fallback if it's a general knowledge query AND doesn't have financial keywords
-        if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !response.includes('OUTPUT:')) {
+        // Also check if the response already contains a proper output section
+        const hasProperResponse = response && response.includes('OUTPUT:');
+        
+        if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
           console.log('Using fallback for non-financial general knowledge query');
           response = getFallbackResponse(prompt);
+        } else if (hasFinancialKeywords) {
+          console.log('Processing financial query with full capabilities');
+          // Make sure financial queries get a proper response format if they don't have one
+          if (!hasProperResponse && response) {
+            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using financial expertise.\n\nOUTPUT: ' + response;
+          }
         }
       }
     } catch (processingError) {
@@ -125,28 +151,41 @@ app.post('/api/query', async (req, res) => {
       response = getFallbackResponse(prompt);
     }
     
-    // Log the full response to the console for debugging
-    console.log('\n---------- FULL RESPONSE ----------');
-    console.log(typeof response, response ? response.length : 0);
+    console.log('\n---------- RESPONSE ----------');
     console.log(response);
-    console.log('-----------------------------------\n');
+    console.log('-------------------------------\n');
     
-    res.json({ response });
-    console.log('Response sent successfully');
+    return response;
   } catch (error) {
-    console.error('\n---------- ERROR PROCESSING QUERY ----------');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('-------------------------------------------\n');
-    // Use fallback response instead of error message
-    const fallbackResponse = getFallbackResponse(req.body.prompt || 'general query');
-    res.json({ response: fallbackResponse });
-    console.log('Fallback response sent due to error');
+    console.error('Error processing query:', error);
+    const fallbackResponse = getFallbackResponse(prompt || 'general query');
+    console.log('\n---------- FALLBACK RESPONSE ----------');
+    console.log(fallbackResponse);
+    console.log('--------------------------------------\n');
+    return fallbackResponse;
   }
-});
+}
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Finance AI Agent server is running on port ${PORT}`);
-});
+// Test queries
+const testQueries = [
+  'who is elon musk?',
+  'how to become financially rich',
+  'Calculate the return on $5000 invested at 8% for 5 years with compound interest',
+  'how to save tax',
+  'what is the current price of bitcoin?',
+  'explain quantum physics'
+];
+
+// Run tests
+async function runTests() {
+  console.log('Starting tests...\n');
+  
+  for (const query of testQueries) {
+    await testQuery(query);
+  }
+  
+  console.log('All tests completed.');
+}
+
+// Run the tests
+runTests().catch(console.error);
