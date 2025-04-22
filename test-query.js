@@ -1,5 +1,6 @@
-const { processUserInput } = require('../financeAgent');
-// DO NOT use dotenv in Netlify Functions. Netlify injects env vars automatically.
+// Simple test script to check query handling logic
+require('dotenv').config();
+const { processUserInput } = require('./financeAgent');
 
 // Improved fallback response for when APIs fail
 function getFallbackResponse(prompt) {
@@ -35,67 +36,21 @@ function getFallbackResponse(prompt) {
   return 'START: ' + prompt + '\n\nPLAN: I\'ll provide a general response.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
 }
 
-// Log environment variables for debugging (visible in Netlify function logs)
-exports.handler = async function(event, context) {
-  console.log('--- Netlify Function Environment Check ---');
-  console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Present' : 'Missing');
-  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present' : 'Missing');
-  console.log('CMC_API_KEY:', process.env.CMC_API_KEY ? 'Present' : 'Missing');
-  console.log('Prompt received:', event.body);
-
-  // Set function timeout to prevent Netlify 502 errors
-  context.callbackWaitsForEmptyEventLoop = false;
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
-  }
-
+// Test function to process a query
+async function testQuery(prompt) {
+  console.log('\n---------- TESTING QUERY ----------');
+  console.log('Query:', prompt);
+  
   try {
-    // Parse the request body
-    console.log('Received Netlify function request');
-    let body;
-    let prompt;
-    try {
-      body = JSON.parse(event.body);
-      prompt = body.prompt;
-    } catch (jsonError) {
-      console.error('JSON parse error:', jsonError);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ response: 'Sorry, there was a problem understanding your request. Please try again.' }),
-        headers: { 'Content-Type': 'application/json' }
-      };
-    }
-    
-    console.log('Request body:', body);
-    
-    if (!prompt) {
-      console.log('Error: Prompt is required');
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ response: 'Prompt is required. Please enter your question.' }),
-        headers: { 'Content-Type': 'application/json' }
-      };
-    }
-    
-    console.log('Processing prompt:', prompt);
-    console.log('Environment variables:');
-    console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `Present (${process.env.GEMINI_API_KEY.length} chars)` : 'Missing');
-    console.log('- ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? `Present (${process.env.ALPHA_VANTAGE_API_KEY.length} chars)` : 'Missing');
-    
-    // Process the user input
+    // Process the query
     let response;
+    
     try {
       // Check if Gemini API key is present
       if (!process.env.GEMINI_API_KEY) {
         console.log('Gemini API key missing, using fallback response');
         response = getFallbackResponse(prompt);
       } else {
-        console.log('Using Gemini API to process query');
         response = await processUserInput(prompt);
         
         // Only use fallback for clearly non-financial general knowledge queries
@@ -169,22 +124,19 @@ exports.handler = async function(event, context) {
           promptLower.includes('insurance')
         );
         
-        // Only use fallback for truly non-financial general knowledge queries
+        // Only use fallback if it's a general knowledge query AND doesn't have financial keywords
         // Also check if the response already contains a proper output section
         const hasProperResponse = response && response.includes('OUTPUT:');
         
-        // For financial queries, always ensure we use the Gemini API response
-        if (hasFinancialKeywords) {
-          console.log('Processing financial query with full Gemini API capabilities');
-          // Make sure financial queries get a proper response format if they don't have one
-          if (!hasProperResponse && response) {
-            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using Gemini API for financial expertise.\n\nOUTPUT: ' + response;
-          }
-        } 
-        // Only use fallback for non-financial general knowledge queries
-        else if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
+        if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
           console.log('Using fallback for non-financial general knowledge query');
           response = getFallbackResponse(prompt);
+        } else if (hasFinancialKeywords) {
+          console.log('Processing financial query with full capabilities');
+          // Make sure financial queries get a proper response format if they don't have one
+          if (!hasProperResponse && response) {
+            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using financial expertise.\n\nOUTPUT: ' + response;
+          }
         }
       }
     } catch (processingError) {
@@ -192,29 +144,48 @@ exports.handler = async function(event, context) {
       console.log('Using fallback response due to processing error');
       response = getFallbackResponse(prompt);
     }
-
+    
     // Ensure response is a non-empty string
     if (!response || (typeof response === 'string' && response.trim() === '')) {
       console.error('Empty or undefined response detected. Returning fallback response.');
       response = getFallbackResponse(prompt);
     }
-
-    // Always return a JSON object with a 'response' property
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ response }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    
+    console.log('\n---------- RESPONSE ----------');
+    console.log(response);
+    console.log('-------------------------------\n');
+    
+    return response;
   } catch (error) {
-    console.error('Error processing query in Netlify function:');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    // Always return a 200 with a response property to prevent Netlify 502
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ response: getFallbackResponse(prompt || 'general query') }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    console.error('Error processing query:', error);
+    const fallbackResponse = getFallbackResponse(prompt || 'general query');
+    console.log('\n---------- FALLBACK RESPONSE ----------');
+    console.log(fallbackResponse);
+    console.log('--------------------------------------\n');
+    return fallbackResponse;
   }
-};
+}
+
+// Test queries
+const testQueries = [
+  'who is elon musk?',
+  'how to become financially rich',
+  'Calculate the return on $5000 invested at 8% for 5 years with compound interest',
+  'how to save tax',
+  'what is the current price of bitcoin?',
+  'explain quantum physics'
+];
+
+// Run tests
+async function runTests() {
+  console.log('Starting tests...\n');
+  
+  for (const query of testQueries) {
+    await testQuery(query);
+  }
+  
+  console.log('All tests completed.');
+}
+
+// Run the tests
+runTests().catch(console.error);

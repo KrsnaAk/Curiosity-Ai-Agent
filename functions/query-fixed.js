@@ -95,95 +95,16 @@ exports.handler = async function(event, context) {
         console.log('Gemini API key missing, using fallback response');
         response = getFallbackResponse(prompt);
       } else {
-        console.log('Using Gemini API to process query');
         response = await processUserInput(prompt);
         
-        // Only use fallback for clearly non-financial general knowledge queries
-        // Check if it's a non-financial query by looking for specific patterns
-        const promptLower = prompt.toLowerCase();
-        const isGeneralKnowledgeQuery = (
-          promptLower.includes('who is') || 
-          promptLower.includes('what is') || 
-          promptLower.includes('how to') || 
-          promptLower.includes('explain')
-        );
-        
-        // Check if it contains financial keywords
-        const hasFinancialKeywords = (
-          promptLower.includes('stock') ||
-          promptLower.includes('invest') ||
-          promptLower.includes('money') ||
-          promptLower.includes('finance') ||
-          promptLower.includes('market') ||
-          promptLower.includes('trading') ||
-          promptLower.includes('crypto') ||
-          promptLower.includes('bitcoin') ||
-          promptLower.includes('fund') ||
-          promptLower.includes('dollar') ||
-          promptLower.includes('euro') ||
-          promptLower.includes('bank') ||
-          promptLower.includes('tax') ||
-          promptLower.includes('economy') ||
-          promptLower.includes('inflation') ||
-          promptLower.includes('interest') ||
-          promptLower.includes('loan') ||
-          promptLower.includes('debt') ||
-          promptLower.includes('budget') ||
-          promptLower.includes('saving') ||
-          promptLower.includes('retirement') ||
-          promptLower.includes('portfolio') ||
-          promptLower.includes('rich') ||
-          promptLower.includes('wealth') ||
-          promptLower.includes('financial') ||
-          promptLower.includes('cash') ||
-          promptLower.includes('income') ||
-          promptLower.includes('expense') ||
-          promptLower.includes('profit') ||
-          promptLower.includes('loss') ||
-          promptLower.includes('dividend') ||
-          promptLower.includes('yield') ||
-          promptLower.includes('bond') ||
-          promptLower.includes('equity') ||
-          promptLower.includes('asset') ||
-          promptLower.includes('liability') ||
-          promptLower.includes('compound') ||
-          promptLower.includes('calculate') ||
-          promptLower.includes('return') ||
-          promptLower.includes('rate') ||
-          promptLower.includes('capital') ||
-          promptLower.includes('hedge') ||
-          promptLower.includes('forex') ||
-          promptLower.includes('exchange') ||
-          promptLower.includes('currency') ||
-          promptLower.includes('price') ||
-          promptLower.includes('cost') ||
-          promptLower.includes('value') ||
-          promptLower.includes('etf') ||
-          promptLower.includes('mutual fund') ||
-          promptLower.includes('401k') ||
-          promptLower.includes('ira') ||
-          promptLower.includes('roth') ||
-          promptLower.includes('credit') ||
-          promptLower.includes('debit') ||
-          promptLower.includes('mortgage') ||
-          promptLower.includes('insurance')
-        );
-        
-        // Only use fallback for truly non-financial general knowledge queries
-        // Also check if the response already contains a proper output section
-        const hasProperResponse = response && response.includes('OUTPUT:');
-        
-        // For financial queries, always ensure we use the Gemini API response
-        if (hasFinancialKeywords) {
-          console.log('Processing financial query with full Gemini API capabilities');
-          // Make sure financial queries get a proper response format if they don't have one
-          if (!hasProperResponse && response) {
-            response = 'START: ' + prompt + '\n\nPLAN: I\'ll analyze this financial query.\n\nOBSERVATION: Using Gemini API for financial expertise.\n\nOUTPUT: ' + response;
-          }
-        } 
-        // Only use fallback for non-financial general knowledge queries
-        else if (isGeneralKnowledgeQuery && !hasFinancialKeywords && !hasProperResponse) {
-          console.log('Using fallback for non-financial general knowledge query');
+        // If the response doesn't contain OUTPUT: but we have a general knowledge query,
+        // use our fallback response for general knowledge queries
+        if (!response.includes('OUTPUT:') && 
+            (prompt.toLowerCase().includes('who is') || 
+             prompt.toLowerCase().includes('what is') || 
+             prompt.toLowerCase().includes('how to') || 
+             prompt.toLowerCase().includes('explain'))) {
+          console.log('Using fallback for general knowledge query');
           response = getFallbackResponse(prompt);
         }
       }

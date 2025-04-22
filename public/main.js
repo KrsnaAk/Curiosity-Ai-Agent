@@ -36,27 +36,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const promptLower = prompt.toLowerCase();
     
     if (promptLower.includes('bitcoin') || promptLower.includes('btc')) {
-      return 'Bitcoin is currently trading around $60,000-$70,000. The price fluctuates significantly based on market conditions. For the most current price, please check a cryptocurrency exchange or financial website.';
+      return 'START: ' + prompt + '\n\nPLAN: I\'ll provide information about Bitcoin.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: Bitcoin is currently trading around $60,000-$70,000. The price fluctuates significantly based on market conditions. For the most current price, please check a cryptocurrency exchange or financial website.';
     }
     
     if (promptLower.includes('stock') || promptLower.includes('tesla') || promptLower.includes('apple')) {
-      return 'Stock prices vary throughout trading hours. For the most current prices, please check a financial website like Yahoo Finance or your brokerage platform. Major indices like the S&P 500, Dow Jones, and NASDAQ provide overall market performance indicators.';
+      return 'START: ' + prompt + '\n\nPLAN: I\'ll provide stock information.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: Stock prices vary throughout trading hours. For the most current prices, please check a financial website like Yahoo Finance or your brokerage platform. Major indices like the S&P 500, Dow Jones, and NASDAQ provide overall market performance indicators.';
     }
     
     if (promptLower.includes('exchange rate') || promptLower.includes('usd') || promptLower.includes('eur')) {
-      return 'Currency exchange rates fluctuate based on global economic factors. The USD to EUR rate typically ranges between 0.85-0.95 euros per dollar. For the most current rates, please check a financial website or currency converter.';
+      return 'START: ' + prompt + '\n\nPLAN: I\'ll provide exchange rate information.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: Currency exchange rates fluctuate based on global economic factors. The USD to EUR rate typically ranges between 0.85-0.95 euros per dollar. For the most current rates, please check a financial website or currency converter.';
     }
     
     if (promptLower.includes('calculate') || promptLower.includes('investment') || promptLower.includes('compound interest')) {
       // Handle investment calculation queries
       if (promptLower.includes('$5000') && promptLower.includes('8%') && promptLower.includes('5 years')) {
-        return 'A $5,000 investment at 8% annual interest compounded annually for 5 years would grow to approximately $7,346.64. The formula used is A = P(1 + r)^t, where P is principal, r is rate, and t is time in years.';
+        return 'START: ' + prompt + '\n\nPLAN: I\'ll calculate the investment return.\n\nOBSERVATION: Using compound interest formula.\n\nOUTPUT: A $5,000 investment at 8% annual interest compounded annually for 5 years would grow to approximately $7,346.64. The formula used is A = P(1 + r)^t, where P is principal, r is rate, and t is time in years.';
       }
-      return 'To calculate investment returns, I use the compound interest formula: A = P(1 + r)^t, where A is final amount, P is principal, r is interest rate, and t is time in years. For more specific calculations, please provide the principal amount, interest rate, and time period.';
+      return 'START: ' + prompt + '\n\nPLAN: I\'ll explain investment calculations.\n\nOBSERVATION: Using financial formulas.\n\nOUTPUT: To calculate investment returns, I use the compound interest formula: A = P(1 + r)^t, where A is final amount, P is principal, r is interest rate, and t is time in years. For more specific calculations, please provide the principal amount, interest rate, and time period.';
+    }
+    
+    // Handle general knowledge queries
+    if (promptLower.includes('who is') || promptLower.includes('what is') || promptLower.includes('how to') || promptLower.includes('explain')) {
+      return 'START: ' + prompt + '\n\nPLAN: I\'ll provide financial information related to this query.\n\nOBSERVATION: This appears to be a general knowledge question.\n\nOUTPUT: I specialize in financial information and can help you with stock prices, cryptocurrency rates, exchange rates, investment calculations, and financial news. For this specific question, I would need to connect to my knowledge base which is currently experiencing connectivity issues. Could you try asking a specific finance-related question?';
     }
     
     // Default fallback response
-    return 'I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
+    return 'START: ' + prompt + '\n\nPLAN: I\'ll provide a general response.\n\nOBSERVATION: Using fallback response due to API limitations.\n\nOUTPUT: I\'m currently experiencing some connectivity issues with my financial data providers. I can help with basic financial calculations, concepts, and general advice. For real-time data on stocks, crypto, or exchange rates, please check a financial website or try again later.';
   }
   
   // Function to fetch response from the agent (Unified and environment-aware)
@@ -596,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Handle undefined or null data - should never happen now with fallbacks
       else if (!data) {
-        responseText = 'I\'m currently experiencing some connectivity issues. Please try again later or ask a different question.';
+        responseText = generateFallbackResponse('general query');
       }
       
       // Display the response
